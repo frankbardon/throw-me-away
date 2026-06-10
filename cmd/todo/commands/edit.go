@@ -72,7 +72,7 @@ func newEditCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&title, "title", "", "new title")
 	cmd.Flags().StringVarP(&prio, "priority", "p", "", "new priority")
-	cmd.Flags().StringVar(&due, "due", "", "new due date")
+	cmd.Flags().StringVar(&due, "due", "", "new due date (today, tomorrow, friday, in 3 days, 2026-12-31)")
 	cmd.Flags().StringVarP(&tagsF, "tag", "t", "", "replace tags (comma-separated)")
 	cmd.Flags().BoolVar(&clear, "clear-due", false, "clear the due date")
 	return cmd

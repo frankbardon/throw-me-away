@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"text/tabwriter"
@@ -14,10 +15,11 @@ import (
 
 func newListCmd() *cobra.Command {
 	var (
-		status string
-		prio   string
-		tag    string
-		text   string
+		status   string
+		prio     string
+		tag      string
+		text     string
+		asJSON   bool
 	)
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -50,6 +52,9 @@ func newListCmd() *cobra.Command {
 				return err
 			}
 			out := f.Apply(all)
+			if asJSON {
+				return renderJSON(cmd, out)
+			}
 			renderTable(cmd, out)
 			return nil
 		},
@@ -58,7 +63,14 @@ func newListCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&prio, "priority", "p", "", "filter by priority")
 	cmd.Flags().StringVarP(&tag, "tag", "t", "", "filter by tag")
 	cmd.Flags().StringVar(&text, "text", "", "match substring in title")
+	cmd.Flags().BoolVar(&asJSON, "json", false, "emit machine-readable JSON")
 	return cmd
+}
+
+func renderJSON(cmd *cobra.Command, tasks []*task.Task) error {
+	enc := json.NewEncoder(cmd.OutOrStdout())
+	enc.SetIndent("", "  ")
+	return enc.Encode(tasks)
 }
 
 func renderTable(cmd *cobra.Command, tasks []*task.Task) {

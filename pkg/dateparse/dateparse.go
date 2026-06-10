@@ -25,7 +25,7 @@ func Parse(input string, now time.Time) (time.Time, error) {
 	if s == "" {
 		return time.Time{}, fmt.Errorf("empty date")
 	}
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	today := time.Date(now.Year(), now.Month(), now.Day(), 12, 0, 0, 0, now.Location())
 
 	switch s {
 	case "today":
@@ -57,11 +57,14 @@ func Parse(input string, now time.Time) (time.Time, error) {
 		return today.AddDate(0, 0, n*mult), nil
 	}
 
+	if t, err := time.Parse(time.RFC3339Nano, input); err == nil {
+		return t, nil
+	}
 	if t, err := time.Parse(time.RFC3339, input); err == nil {
 		return t, nil
 	}
 	if t, err := time.Parse("2006-01-02", input); err == nil {
-		return t, nil
+		return time.Date(t.Year(), t.Month(), t.Day(), 12, 0, 0, 0, now.Location()), nil
 	}
 	return time.Time{}, fmt.Errorf("could not parse date %q", input)
 }

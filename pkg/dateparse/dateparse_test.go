@@ -12,11 +12,11 @@ func TestParseRelativeKeywords(t *testing.T) {
 		in   string
 		want time.Time
 	}{
-		{"today", time.Date(2026, 6, 9, 0, 0, 0, 0, time.UTC)},
-		{"tomorrow", time.Date(2026, 6, 10, 0, 0, 0, 0, time.UTC)},
-		{"yesterday", time.Date(2026, 6, 8, 0, 0, 0, 0, time.UTC)},
-		{"in 3 days", time.Date(2026, 6, 12, 0, 0, 0, 0, time.UTC)},
-		{"in 2 weeks", time.Date(2026, 6, 23, 0, 0, 0, 0, time.UTC)},
+		{"today", time.Date(2026, 6, 9, 12, 0, 0, 0, time.UTC)},
+		{"tomorrow", time.Date(2026, 6, 10, 12, 0, 0, 0, time.UTC)},
+		{"yesterday", time.Date(2026, 6, 8, 12, 0, 0, 0, time.UTC)},
+		{"in 3 days", time.Date(2026, 6, 12, 12, 0, 0, 0, time.UTC)},
+		{"in 2 weeks", time.Date(2026, 6, 23, 12, 0, 0, 0, time.UTC)},
 	}
 	for _, c := range cases {
 		got, err := Parse(c.in, now)
@@ -31,7 +31,7 @@ func TestParseRelativeKeywords(t *testing.T) {
 }
 
 func TestParseWeekdays(t *testing.T) {
-	now := time.Date(2026, 6, 9, 0, 0, 0, 0, time.UTC) // Tuesday
+	now := time.Date(2026, 6, 9, 12, 0, 0, 0, time.UTC) // Tuesday
 
 	got, err := Parse("friday", now)
 	if err != nil {
@@ -55,12 +55,12 @@ func TestParseWeekdays(t *testing.T) {
 }
 
 func TestParseAbsolute(t *testing.T) {
-	now := time.Now()
+	now := time.Date(2026, 6, 9, 14, 0, 0, 0, time.UTC)
 	got, err := Parse("2030-01-02", now)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	want := time.Date(2030, 1, 2, 0, 0, 0, 0, time.UTC)
+	want := time.Date(2030, 1, 2, 12, 0, 0, 0, time.UTC)
 	if !got.Equal(want) {
 		t.Errorf("got %v want %v", got, want)
 	}

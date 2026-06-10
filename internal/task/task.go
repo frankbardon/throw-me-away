@@ -1,23 +1,25 @@
 package task
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 )
 
 type Task struct {
-	ID        int       `json:"id"`
-	Title     string    `json:"title"`
-	Status    Status    `json:"status"`
-	Priority  Priority  `json:"priority"`
-	Tags      []string  `json:"tags,omitempty"`
-	Due       time.Time `json:"due,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int        `json:"id"`
+	Title     string     `json:"title"`
+	Status    Status     `json:"status"`
+	Priority  Priority   `json:"priority"`
+	Tags      []string   `json:"tags,omitempty"`
+	Due       *time.Time `json:"due,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
-func New(title string, priority Priority, tags []string, due time.Time) (*Task, error) {
+func New(title string, priority Priority, tags []string, due *time.Time) (*Task, error) {
 	title = strings.TrimSpace(title)
 	if title == "" {
 		return nil, errors.New("title required")
@@ -50,8 +52,20 @@ func (t *Task) MarkDone() {
 }
 
 func (t *Task) Overdue(now time.Time) bool {
-	if t.Due.IsZero() || t.Status == StatusDone {
+	if t.Due == nil || t.Status == StatusDone {
 		return false
 	}
 	return t.Due.Before(now)
+}
+
+func (t *Task) UnmarshalJSON(data []byte) error {
+	type alias Task
+	aux := (*alias)(t)
+	if err := json.Unmarshal(data, aux); err != nil {
+		return fmt.Errorf("unmarshal task: %w", err)
+	}
+	if t.Due != nil && t.Due.IsZero() {
+		t.Due = nil
+	}
+	return nil
 }

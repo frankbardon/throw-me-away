@@ -7,7 +7,7 @@ import (
 
 func TestNew(t *testing.T) {
 	due := time.Date(2030, 1, 1, 0, 0, 0, 0, time.UTC)
-	got, err := New("write tests", PriorityHigh, []string{"qa"}, due)
+	got, err := New("write tests", PriorityHigh, []string{"qa"}, &due)
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}
@@ -20,19 +20,32 @@ func TestNew(t *testing.T) {
 	if got.Priority != PriorityHigh {
 		t.Errorf("priority = %v", got.Priority)
 	}
+	if got.Due == nil || !got.Due.Equal(due) {
+		t.Errorf("due = %v want %v", got.Due, due)
+	}
 	if got.CreatedAt.IsZero() || got.UpdatedAt.IsZero() {
 		t.Error("timestamps not set")
 	}
 }
 
+func TestNewNilDue(t *testing.T) {
+	got, err := New("no due date", PriorityLow, nil, nil)
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	if got.Due != nil {
+		t.Errorf("due = %v want nil", got.Due)
+	}
+}
+
 func TestNewBlankTitle(t *testing.T) {
-	if _, err := New("   ", PriorityMedium, nil, time.Time{}); err == nil {
+	if _, err := New("   ", PriorityMedium, nil, nil); err == nil {
 		t.Error("expected error on blank title")
 	}
 }
 
 func TestMarkDone(t *testing.T) {
-	tk, _ := New("x", PriorityLow, nil, time.Time{})
+	tk, _ := New("x", PriorityLow, nil, nil)
 	before := tk.UpdatedAt
 	time.Sleep(2 * time.Millisecond)
 	tk.MarkDone()
@@ -51,14 +64,14 @@ func TestOverdue(t *testing.T) {
 
 	cases := []struct {
 		name string
-		due  time.Time
+		due  *time.Time
 		done bool
 		want bool
 	}{
-		{"past due open", past, false, true},
-		{"future due open", future, false, false},
-		{"past due done", past, true, false},
-		{"no due", time.Time{}, false, false},
+		{"past due open", &past, false, true},
+		{"future due open", &future, false, false},
+		{"past due done", &past, true, false},
+		{"no due", nil, false, false},
 	}
 	for _, c := range cases {
 		tk := &Task{Title: "x", Due: c.due, Status: StatusTodo, CreatedAt: now}

@@ -37,7 +37,7 @@ func newShowCmd() *cobra.Command {
 			if len(t.Tags) > 0 {
 				fmt.Fprintf(w, "tags:     %s\n", strings.Join(t.Tags, ", "))
 			}
-			if !t.Due.IsZero() {
+			if t.Due != nil {
 				fmt.Fprintf(w, "due:      %s\n", t.Due.Format("2006-01-02"))
 			}
 			fmt.Fprintf(w, "created:  %s\n", t.CreatedAt.Format("2006-01-02 15:04"))

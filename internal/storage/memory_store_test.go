@@ -3,14 +3,13 @@ package storage
 import (
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/frankbardon/todo/internal/task"
 )
 
 func newTask(t *testing.T, title string) *task.Task {
 	t.Helper()
-	tk, err := task.New(title, task.PriorityMedium, nil, time.Time{})
+	tk, err := task.New(title, task.PriorityMedium, nil, nil)
 	if err != nil {
 		t.Fatalf("task.New: %v", err)
 	}

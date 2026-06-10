@@ -5,14 +5,13 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/frankbardon/todo/internal/task"
 )
 
 func mustTask(t *testing.T, title string) *task.Task {
 	t.Helper()
-	tk, err := task.New(title, task.PriorityMedium, []string{"x"}, time.Time{})
+	tk, err := task.New(title, task.PriorityMedium, []string{"x"}, nil)
 	if err != nil {
 		t.Fatalf("task.New: %v", err)
 	}

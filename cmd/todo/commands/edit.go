@@ -51,13 +51,13 @@ func newEditCmd() *cobra.Command {
 				tk.Priority = p
 			}
 			if clear {
-				tk.Due = time.Time{}
+				tk.Due = nil
 			} else if due != "" {
 				d, err := dateparse.Parse(due, time.Now())
 				if err != nil {
 					return err
 				}
-				tk.Due = d
+				tk.Due = &d
 			}
 			if tagsF != "" {
 				tk.Tags = tags.Parse(tagsF)

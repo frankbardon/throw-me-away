@@ -28,6 +28,7 @@ func newRoot() *cobra.Command {
 		newShowCmd(),
 		newEditCmd(),
 		newClearDoneCmd(),
+		newStatsCmd(),
 	)
 	return root
 }

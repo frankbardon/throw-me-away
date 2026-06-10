@@ -3,6 +3,7 @@ package commands
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -263,4 +264,106 @@ func equalInts(a, b []int) bool {
 		}
 	}
 	return true
+}
+
+// swapIsTerminal replaces the package-level isTerminal detector with a fake
+// returning the given fixed value, and restores the original via t.Cleanup so
+// no test bleeds into another. Tests using it must not run in parallel.
+func swapIsTerminal(t *testing.T, fake bool) {
+	t.Helper()
+	prev := isTerminal
+	isTerminal = func(io.Writer) bool { return fake }
+	t.Cleanup(func() { isTerminal = prev })
+}
+
+// overdueOnlyFixture returns a single overdue, not-done task so the list
+// output contains exactly one due-date cell to inspect.
+func overdueOnlyFixture() []*task.Task {
+	created := ts("2000-01-01T00:00:00Z")
+	return []*task.Task{
+		{
+			ID:        2,
+			Title:     "ancient bug",
+			Status:    task.StatusTodo,
+			Priority:  task.PriorityHigh,
+			Due:       dueTimePtr("2000-01-02T12:00:00Z"),
+			CreatedAt: created,
+			UpdatedAt: created,
+		},
+	}
+}
+
+func TestListRenderTtyEmitsAnsiAroundDate(t *testing.T) {
+	swapIsTerminal(t, true)
+	path := writeStore(t, overdueOnlyFixture())
+
+	out := runList(t, path)
+
+	if !strings.Contains(out, ansiRed+"2000-01-02"+ansiReset) {
+		t.Errorf("tty render missing ANSI red wrapping around overdue date.\noutput:\n%q", out)
+	}
+	if !bytes.Contains([]byte(out), []byte("\x1b[31m")) {
+		t.Errorf("tty render missing ANSI red opener \\x1b[31m.\noutput:\n%q", out)
+	}
+	if !bytes.Contains([]byte(out), []byte("\x1b[0m")) {
+		t.Errorf("tty render missing ANSI reset \\x1b[0m.\noutput:\n%q", out)
+	}
+	if strings.Contains(out, "!2000-01-02") {
+		t.Errorf("tty render must not use the non-tty `!` prefix.\noutput:\n%q", out)
+	}
+}
+
+func TestListRenderNonTtyIsAnsiFreeWithBangPrefix(t *testing.T) {
+	swapIsTerminal(t, false)
+	path := writeStore(t, overdueOnlyFixture())
+
+	out := runList(t, path)
+
+	if bytes.Contains([]byte(out), []byte{0x1b}) {
+		t.Errorf("non-tty render leaked ESC byte; output must be ANSI-free.\noutput:\n%q", out)
+	}
+	if !strings.Contains(out, "!2000-01-02") {
+		t.Errorf("non-tty render missing `!` overdue prefix on date.\noutput:\n%q", out)
+	}
+}
+
+func TestListRenderTtyTable(t *testing.T) {
+	tests := []struct {
+		name        string
+		tty         bool
+		wantContain []string
+		wantAbsent  []string
+	}{
+		{
+			name:        "tty path wraps date in ANSI red",
+			tty:         true,
+			wantContain: []string{"\x1b[31m", "\x1b[0m", "2000-01-02"},
+			wantAbsent:  []string{"!2000-01-02"},
+		},
+		{
+			name:        "non-tty path uses bang prefix and no ANSI",
+			tty:         false,
+			wantContain: []string{"!2000-01-02"},
+			wantAbsent:  []string{"\x1b"},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			swapIsTerminal(t, tc.tty)
+			path := writeStore(t, overdueOnlyFixture())
+
+			out := runList(t, path)
+
+			for _, s := range tc.wantContain {
+				if !strings.Contains(out, s) {
+					t.Errorf("output missing %q.\noutput:\n%q", s, out)
+				}
+			}
+			for _, s := range tc.wantAbsent {
+				if strings.Contains(out, s) {
+					t.Errorf("output unexpectedly contains %q.\noutput:\n%q", s, out)
+				}
+			}
+		})
+	}
 }

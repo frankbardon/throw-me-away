@@ -113,11 +113,13 @@ func renderJSON(cmd *cobra.Command, tasks []*task.Task) error {
 }
 
 func renderTable(cmd *cobra.Command, tasks []*task.Task) {
+	out := cmd.OutOrStdout()
 	if len(tasks) == 0 {
-		fmt.Fprintln(cmd.OutOrStdout(), "no tasks")
+		fmt.Fprintln(out, "no tasks")
 		return
 	}
-	w := tabwriter.NewWriter(cmd.OutOrStdout(), 0, 0, 2, ' ', 0)
+	tty := isTerminal(out)
+	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, "ID\tSTATUS\tPRIO\tDUE\tTAGS\tTITLE")
 	now := time.Now()
 	for _, t := range tasks {
@@ -125,7 +127,11 @@ func renderTable(cmd *cobra.Command, tasks []*task.Task) {
 		if t.Due != nil {
 			due = t.Due.Format("2006-01-02")
 			if t.Overdue(now) {
-				due += "*"
+				if tty {
+					due = ansiRed + due + ansiReset
+				} else {
+					due = "!" + due
+				}
 			}
 		}
 		fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\t%s\n",

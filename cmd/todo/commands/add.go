@@ -30,13 +30,13 @@ func newAddCmd() *cobra.Command {
 				return err
 			}
 
-			var dueT time.Time
+			var dueT *time.Time
 			if due != "" {
 				t, err := dateparse.Parse(due, time.Now())
 				if err != nil {
 					return err
 				}
-				dueT = t
+				dueT = &t
 			}
 
 			tk, err := task.New(title, p, tags.Parse(tagsF), dueT)

@@ -83,7 +83,7 @@ func renderTable(cmd *cobra.Command, tasks []*task.Task) {
 	now := time.Now()
 	for _, t := range tasks {
 		due := "-"
-		if !t.Due.IsZero() {
+		if t.Due != nil {
 			due = t.Due.Format("2006-01-02")
 			if t.Overdue(now) {
 				due += "*"
